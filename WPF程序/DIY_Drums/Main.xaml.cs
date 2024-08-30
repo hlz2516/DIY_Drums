@@ -20,11 +20,17 @@ namespace DIY_Drums
         public Main()
         {
             InitializeComponent();
-            engine = new AudioPlaybackEngine();
             sounds = new CachedSound[6];
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            var drivers = AsioOut.GetDriverNames();
+            if (drivers.Length == 0)
+            {
+                MessageBox.Show("没有检测到ASIO驱动程序，请到ASIO官方网站进行下载安装！", "提示");
+                return;
+            }
+            engine = new AudioPlaybackEngine(drivers[0]);
             string comName = Config.Default.Com;
             if (string.IsNullOrEmpty(comName))
             {
@@ -120,8 +126,45 @@ namespace DIY_Drums
 
         private void Test_Click(object sender, RoutedEventArgs e)
         {
-            var setupForm = new Test();
-            setupForm.ShowDialog();
+            var setupForm = new Settings();
+            var res = setupForm.ShowDialog();
+            if (res == true)
+            {
+                var driver = Config.Default.Driver;
+                if (string.IsNullOrEmpty(driver))
+                {
+                    MessageBox.Show("没有检测到ASIO驱动程序，请到ASIO官方网站进行下载安装！", "提示");
+                    return;
+                }
+                for (int i = 0; i < 6; i++)
+                {
+                    string value = Config.Default[$"A{i}"]?.ToString();
+                    string wavLoc = AppDomain.CurrentDomain.BaseDirectory + "\\Resources\\audios\\empty.wav";
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        wavLoc = AppDomain.CurrentDomain.BaseDirectory + $"\\Resources\\audios\\{value}.wav";
+                    }
+                    sounds[i] = new CachedSound(wavLoc);
+                }
+                string comName = Config.Default.Com;
+                if (string.IsNullOrEmpty(comName))
+                {
+                    MessageBox.Show("没有设置对应串口，请进入设置窗口进行设置！", "提示");
+                    return;
+                }
+                try
+                {
+                    engine.Dispose();
+                    engine = new AudioPlaybackEngine(driver);
+                    com = new SerialPort(comName, 31250);
+                    com.Open();
+                    com.DataReceived += Com_DataReceived;
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, "Initialized failed!");
+                }
+            }
         }
     }
 }

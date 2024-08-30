@@ -15,18 +15,16 @@ namespace DIY_Drums.Helpers
     {
         private readonly IWavePlayer outputDevice;
         private readonly MixingSampleProvider mixer;
-        private readonly string ASIO_DRIVER_NAME = "ASIO4ALL v2";
         /// <summary>
         /// Audio Playback Engine
         /// </summary>
-        public AudioPlaybackEngine(int sampleRate = 44100, int channelCount = 2)
+        public AudioPlaybackEngine(string driverName,int sampleRate = 44100, int channelCount = 2)
         {
-            var asioDriverName = AsioOut.GetDriverNames();
-            if (asioDriverName.Length == 0 || !asioDriverName.Contains(ASIO_DRIVER_NAME))
+            if (!driverName.Contains("ASIO"))
             {
                 throw new ArgumentException("The driver for ASIO4ALL is not installed. Please go to the official website to install it");
             }
-            outputDevice = new AsioOut(ASIO_DRIVER_NAME);
+            outputDevice = new AsioOut(driverName);
             mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channelCount));
             mixer.ReadFully = true;
             outputDevice.Init(mixer);

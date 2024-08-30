@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+/WPF程序/DIY_Drums/bin/Debug/net6.0-windows
+/WPF程序/DIY_Drums/obj
